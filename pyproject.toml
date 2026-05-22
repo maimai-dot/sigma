@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=75.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sigma"
+version = "0.1.0"
+description = "Generic AERC multi-agent collaboration framework — zero domain knowledge baked in"
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "AGPL-3.0"}
+authors = [
+    {name = "Sigma Framework Contributors"},
+]
+keywords = [
+    "multi-agent",
+    "collaboration",
+    "aerc",
+    "llm",
+    "ai-agent",
+    "orchestration",
+    "framework",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "openai>=1.0",
+    "python-dotenv>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/sigma-framework/sigma"
+Repository = "https://github.com/sigma-framework/sigma"
+Issues = "https://github.com/sigma-framework/sigma/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=6.0",
+    "ruff>=0.9",
+]
+
+[project.scripts]
+sigma = "sigma.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["output*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I001"]

@@ -1,0 +1,68 @@
+"""Sigma logging — thin wrapper around Python logging.
+
+Every Sigma module gets a logger via `get_logger(__name__)`.
+Applications configure handlers via `setup_logging()` or standard `logging.basicConfig()`.
+"""
+
+import logging
+import sys
+
+_logger_registry: dict[str, logging.Logger] = {}
+_initialized = False
+
+
+def get_logger(name: str) -> logging.Logger:
+    """Get a named logger for a Sigma module.
+
+    On first call, a default console handler is installed (INFO level, stdout).
+    Call `setup_logging()` explicitly to override.
+    """
+    global _initialized
+    if not _initialized:
+        _init_defaults()
+    if name not in _logger_registry:
+        _logger_registry[name] = logging.getLogger(name)
+    return _logger_registry[name]
+
+
+def setup_logging(
+    level: int = logging.INFO,
+    fmt: str = "[%(asctime)s] %(levelname)-7s %(name)s | %(message)s",
+    datefmt: str = "%H:%M:%S",
+    stream=None,
+    file_path: str | None = None,
+):
+    """Configure Sigma logging globally.
+
+    Args:
+        level: Log level (default INFO).
+        fmt: Log message format.
+        datefmt: Date format for timestamps.
+        stream: Output stream (default stdout).
+        file_path: If set, also log to this file.
+    """
+    global _initialized
+    logger = logging.getLogger("sigma")
+    logger.setLevel(level)
+    logger.handlers.clear()
+
+    handler = logging.StreamHandler(stream or sys.stdout)
+    handler.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
+    logger.addHandler(handler)
+
+    if file_path:
+        from pathlib import Path
+        Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+        fh = logging.FileHandler(file_path, encoding="utf-8")
+        fh.setFormatter(logging.Formatter(
+            fmt="[%(asctime)s] %(levelname)-7s %(name)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        ))
+        logger.addHandler(fh)
+
+    _initialized = True
+
+
+def _init_defaults():
+    """Install a minimal default handler so logging works out of the box."""
+    setup_logging()
