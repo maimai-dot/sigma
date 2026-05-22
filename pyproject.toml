@@ -39,9 +39,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sigma-framework/sigma"
-Repository = "https://github.com/sigma-framework/sigma"
-Issues = "https://github.com/sigma-framework/sigma/issues"
+Homepage = "https://github.com/maimai-dot/sigma"
+Repository = "https://github.com/maimai-dot/sigma"
+Issues = "https://github.com/maimai-dot/sigma/issues"
 
 [project.optional-dependencies]
 dev = [
