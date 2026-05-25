@@ -1,5 +1,6 @@
 """Tests for LLM backend — UniversalBackend init, lazy client, chat, retry logic."""
 
+import os
 import time
 import pytest
 from unittest import mock
@@ -10,7 +11,7 @@ from sigma.llm import (
 )
 
 
-API_KEY = "sk-81ec7a743b3a487c84201bc55e61c475"
+API_KEY = os.environ.get("SIGMA_TEST_API_KEY", "sk-test")
 
 
 class TestLLMResponse:
