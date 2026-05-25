@@ -7,9 +7,7 @@ Zero domain knowledge baked in. Inject everything via SigmaConfig + ToolSpec. Wo
 ## Installation
 
 ```bash
-pip install -e .
-# or from PyPI (future):
-# pip install sigma-framework
+pip install sigma-aerc
 ```
 
 Requires Python ≥ 3.12.
@@ -116,7 +114,7 @@ pytest tests/ -v
 pytest --cov=sigma --cov-report=term
 ```
 
-985 tests, 80% coverage on all pure-logic modules.
+1018 tests, 80% coverage on all pure-logic modules.
 
 ## Concepts
 
@@ -127,4 +125,4 @@ pytest --cov=sigma --cov-report=term
 
 ## License
 
-MIT
+AGPL-3.0
