@@ -2,13 +2,14 @@
 
 > 通用多智能体 AERC 协同框架。零领域知识内置，全部通过 Config + ToolSpec 注入。  
 > 哲学：**底线质量 · 极致效率 · 可控成本**  
-> 测试：**985 tests · 80% coverage**（2026-05-21）
+> 测试：**1018 tests · 80% coverage**（2026-05-25）  
+> 安全：**v0.1.0 已 yank**（含泄露 key），当前版本 **v0.1.2**
 
 ## 项目定位
 
 Σ 是一个可申请专利的通用多智能体协同框架。RocketFactory 是旗舰应用。
 
-- **开源版 (MIT)**: 核心 AERC 引擎、交叉审查、收敛判断、成本追踪
+- **开源版 (AGPL-3.0)**: 核心 AERC 引擎、交叉审查、收敛判断、成本追踪
 - **企业版 (闭源)**: SSO/RBAC、HIPAA/SOC2、监控仪表板、SLA
 
 ## 技术栈
@@ -26,7 +27,7 @@
 sigma/
 ├── CLAUDE.md                    # 本文件
 ├── README.md                    # 用户文档
-├── pyproject.toml               # pip install -e .
+├── pyproject.toml               # pip install sigma-aerc
 ├── src/sigma/
 │   ├── __init__.py              # 公共 API 全部在此导出
 │   ├── protocol.py              # AERC 协议引擎（核心，~1000行）
@@ -146,7 +147,7 @@ Resolve 三级分级调解：
 
 ```bash
 # 测试
-pytest tests/ -v                           # 全部（当前 985 tests）
+pytest tests/ -v                           # 全部（当前 1018 tests）
 pytest tests/test_tau.py -v           # Tau 框架
 python -m pytest tests/ -q                 # 快速回归
 pytest --cov=sigma --cov-report=term       # 覆盖率（当前 80%）
@@ -155,7 +156,7 @@ pytest --cov=sigma --cov-report=term       # 覆盖率（当前 80%）
 mypy src/sigma/
 
 # 安装
-pip install -e .
+pip install sigma-aerc
 ```
 
 ## 代码规范
@@ -210,7 +211,9 @@ pip install -e .
 - [x] **OpenAI Function Calling 集成** — `do()` 优先 function calling + fallback 文本标记
 - [x] **3 个鲁棒性 Bug 修复** — 大规模 LLM 失败检测 / `agent_analyses` 返回 / `reasoning_content` 收集
 - [x] **专利决策确定** — 不申请；走 arXiv 防御性公开 + AGPLv3 + AERC 协议标准路线
+- [x] **GitHub 仓库公开** — https://github.com/maimai-dot/sigma
+- [x] **PyPI 发布** — `sigma-aerc` v0.1.0 → v0.1.2 (https://pypi.org/project/sigma-aerc/)
+- [x] **安全事件响应 (2026-05-25)** — API key 泄露根因分析 + 6 项安全加固 + v0.1.0 yank + key 撤销
 - [ ] 国际化（中文 → 英文）
 - [ ] arXiv 防御性公开投稿
-- [ ] GitHub 仓库公开 + PyPI 发布
 - [ ] #28: 完整火箭设计端到端验证
