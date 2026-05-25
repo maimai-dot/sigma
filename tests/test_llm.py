@@ -12,6 +12,8 @@ from sigma.llm import (
 
 
 API_KEY = os.environ.get("SIGMA_TEST_API_KEY", "sk-test")
+_real_key = bool(os.environ.get("SIGMA_TEST_API_KEY"))
+needs_api_key = pytest.mark.skipif(not _real_key, reason="SIGMA_TEST_API_KEY not set")
 
 
 class TestLLMResponse:
@@ -104,6 +106,7 @@ class TestUniversalBackendInit:
         assert be.retry is rc
 
 
+@needs_api_key
 class TestUniversalBackendChat:
     """Chat method — real API calls to DeepSeek."""
 
@@ -263,6 +266,7 @@ class TestAsyncUniversalBackendInit:
         assert be.retry is rc
 
 
+@needs_api_key
 class TestAsyncUniversalBackendChat:
     """Async chat — real API calls to DeepSeek."""
 
