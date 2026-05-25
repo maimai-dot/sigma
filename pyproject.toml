@@ -3,12 +3,12 @@ requires = ["setuptools>=75.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sigma"
-version = "0.1.0"
+name = "sigma-aerc"
+version = "0.1.1"
 description = "Generic AERC multi-agent collaboration framework — zero domain knowledge baked in"
 requires-python = ">=3.12"
 readme = "README.md"
-license = {text = "AGPL-3.0"}
+license = "AGPL-3.0"
 authors = [
     {name = "Sigma Framework Contributors"},
 ]
@@ -24,7 +24,6 @@ keywords = [
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",

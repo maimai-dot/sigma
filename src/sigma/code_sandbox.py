@@ -170,10 +170,22 @@ def _run_in_subprocess(code: str, timeout: int = EXEC_TIMEOUT) -> dict:
         f.write(code)
         tmp_path = f.name
 
-    env = os.environ.copy()
-    # Keep site-packages available so whitelisted libs (numpy, scipy) work.
-    # Clear PYTHONSTARTUP to avoid user rc files.
-    env.pop("PYTHONSTARTUP", None)
+    # Filter environment to avoid leaking secrets into sandbox subprocess.
+    # Only pass variables the sandbox actually needs — never API keys.
+    env = {}
+    safe_keys = {
+        "PATH", "PYTHONPATH", "HOME", "USERPROFILE", "TEMP", "TMP",
+        "SYSTEMROOT", "COMSPEC", "PATHEXT", "HOMEDRIVE", "HOMEPATH",
+        "APPDATA", "LOCALAPPDATA", "ProgramData", "USERNAME",
+        "LANG", "LC_ALL", "LC_CTYPE", "TZ",
+    }
+    for k, v in os.environ.items():
+        if k in safe_keys:
+            env[k] = v
+        elif k.startswith("PYTHON") and k != "PYTHONSTARTUP":
+            env[k] = v
+        elif k in ("CONDA_PREFIX", "VIRTUAL_ENV"):
+            env[k] = v
 
     try:
         result = subprocess.run(

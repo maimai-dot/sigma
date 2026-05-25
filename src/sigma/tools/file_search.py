@@ -17,6 +17,31 @@ from sigma.agent import BaseTool
 
 MAX_FILE_BYTES = 16 * 1024 * 1024   # 16 MB
 MAX_RESULTS = 500
+FORBIDDEN_PATH_PATTERNS = {"..", "~", "$"}
+
+
+def _safe_path(filepath: str, root: Path | None = None) -> Path:
+    """Resolve and validate a file path, blocking traversal escapes.
+
+    Returns the resolved absolute Path.
+    Raises ValueError if the path contains forbidden patterns or escapes root.
+    """
+    if not filepath or not isinstance(filepath, str):
+        raise ValueError("filepath is required and must be a string")
+    clean = filepath.strip()
+    if not clean:
+        raise ValueError("filepath cannot be empty")
+    for pattern in FORBIDDEN_PATH_PATTERNS:
+        if pattern in clean:
+            raise ValueError(f"filepath contains forbidden pattern: {pattern}")
+    resolved = (root or Path.cwd()).resolve() / clean
+    resolved = resolved.resolve()
+    root_path = (root or Path.cwd()).resolve()
+    try:
+        resolved.relative_to(root_path)
+    except ValueError:
+        raise ValueError(f"Path traversal blocked: '{clean}' escapes root")
+    return resolved
 
 
 def _read_text_safe(path: Path) -> str | None:
@@ -73,7 +98,11 @@ class JsonTool(BaseTool):
         if not operation:
             return {"success": False, "error": "operation is required"}
 
-        p = Path(filepath)
+        try:
+            p = _safe_path(filepath)
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+
         text = _read_text_safe(p)
         if text is None:
             return {"success": False, "error": f"Cannot read: {filepath}"}
@@ -171,7 +200,11 @@ class CsvTool(BaseTool):
         if not operation:
             return {"success": False, "error": "operation is required"}
 
-        p = Path(filepath)
+        try:
+            p = _safe_path(filepath)
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+
         text = _read_text_safe(p)
         if text is None:
             return {"success": False, "error": f"Cannot read: {filepath}"}
@@ -252,7 +285,10 @@ class TxtGrepTool(BaseTool):
         if not pattern:
             return {"success": False, "error": "pattern is required"}
 
-        p = Path(filepath)
+        try:
+            p = _safe_path(filepath)
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
         text = _read_text_safe(p)
         if text is None:
             return {"success": False, "error": f"Cannot read: {filepath}"}

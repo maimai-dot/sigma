@@ -7,6 +7,7 @@ per-agent LLM configuration, protocol-based typing, and multimodal content.
 import asyncio
 import base64
 import os
+import re
 import threading
 import time
 from collections.abc import Generator, AsyncGenerator
@@ -24,6 +25,26 @@ from openai import (
     PermissionDeniedError,
     BadRequestError,
 )
+
+
+def _sanitize_error(err: Exception | str) -> str:
+    """Sanitize error messages to prevent API key leakage into persisted output.
+
+    OpenAI/DeepSeek SDK AuthenticationError messages may include the raw API
+    key (e.g. "Incorrect API key provided: sk-xxxxxxxxxxxxx").  Since error
+    strings flow into LLMResponse.content and are persisted to disk (REPORT.md,
+    result.json, checkpoint.json), we must redact them.
+    """
+    msg = str(err)
+    msg = re.sub(r'sk-[A-Za-z0-9]{20,}', '[REDACTED]', msg)
+    msg = re.sub(r'org-[A-Za-z0-9]{20,}', '[REDACTED]', msg)
+    msg = re.sub(r'"api_key":\s*"[^"]*"', '"api_key": "[REDACTED]"', msg)
+    return msg
+
+
+def _fmt_error(err: Exception | str) -> str:
+    """Format a sanitized error string for LLMResponse.content."""
+    return f"[LLM_ERROR: {_sanitize_error(err)}]"
 
 
 TRANSIENT_ERRORS = (
@@ -370,12 +391,12 @@ class UniversalBackend:
                     delay *= self.retry.backoff
                     continue
                 return LLMResponse(
-                    content=f"[LLM_ERROR: {e}]",
+                    content=_fmt_error(e),
                     retries=attempt,
                 )
             except (AuthenticationError, PermissionDeniedError, BadRequestError) as e:
                 return LLMResponse(
-                    content=f"[LLM_ERROR: {e}]",
+                    content=_fmt_error(e),
                     retries=0,
                 )
             except Exception as e:
@@ -385,7 +406,7 @@ class UniversalBackend:
                     delay *= self.retry.backoff
                     continue
                 return LLMResponse(
-                    content=f"[LLM_ERROR: {e}]",
+                    content=_fmt_error(e),
                     retries=attempt,
                 )
             else:
@@ -418,7 +439,7 @@ class UniversalBackend:
 
         # Should not reach here, but safety fallback
         return LLMResponse(
-            content=f"[LLM_ERROR: {last_error}]",
+            content=_fmt_error(last_error),
             retries=self.retry.max_retries,
         )
 
@@ -493,19 +514,19 @@ class UniversalBackend:
                     time.sleep(delay)
                     delay *= self.retry.backoff
                     continue
-                return LLMResponse(content=f"[LLM_ERROR: {e}]", retries=attempt)
+                return LLMResponse(content=_fmt_error(e), retries=attempt)
             except (AuthenticationError, PermissionDeniedError, BadRequestError) as e:
-                return LLMResponse(content=f"[LLM_ERROR: {e}]", retries=0)
+                return LLMResponse(content=_fmt_error(e), retries=0)
             except Exception as e:
                 last_error = e
                 if attempt < self.retry.max_retries:
                     time.sleep(delay)
                     delay *= self.retry.backoff
                     continue
-                return LLMResponse(content=f"[LLM_ERROR: {e}]", retries=attempt)
+                return LLMResponse(content=_fmt_error(e), retries=attempt)
 
         return LLMResponse(
-            content=f"[LLM_ERROR: {last_error}]",
+            content=_fmt_error(last_error),
             retries=self.retry.max_retries,
         )
 
@@ -574,12 +595,12 @@ class AsyncUniversalBackend:
                     delay *= self.retry.backoff
                     continue
                 return LLMResponse(
-                    content=f"[LLM_ERROR: {e}]",
+                    content=_fmt_error(e),
                     retries=attempt,
                 )
             except (AuthenticationError, PermissionDeniedError, BadRequestError) as e:
                 return LLMResponse(
-                    content=f"[LLM_ERROR: {e}]",
+                    content=_fmt_error(e),
                     retries=0,
                 )
             except Exception as e:
@@ -588,7 +609,7 @@ class AsyncUniversalBackend:
                     delay *= self.retry.backoff
                     continue
                 return LLMResponse(
-                    content=f"[LLM_ERROR: {e}]",
+                    content=_fmt_error(e),
                     retries=attempt,
                 )
             else:
@@ -620,7 +641,7 @@ class AsyncUniversalBackend:
                 )
 
         return LLMResponse(
-            content=f"[LLM_ERROR: retry exhausted]",
+            content=_fmt_error("retry exhausted"),
             retries=self.retry.max_retries,
         )
 
@@ -693,18 +714,18 @@ class AsyncUniversalBackend:
                     await asyncio.sleep(delay)
                     delay *= self.retry.backoff
                     continue
-                return LLMResponse(content=f"[LLM_ERROR: {e}]", retries=attempt)
+                return LLMResponse(content=_fmt_error(e), retries=attempt)
             except (AuthenticationError, PermissionDeniedError, BadRequestError) as e:
-                return LLMResponse(content=f"[LLM_ERROR: {e}]", retries=0)
+                return LLMResponse(content=_fmt_error(e), retries=0)
             except Exception as e:
                 if attempt < self.retry.max_retries:
                     await asyncio.sleep(delay)
                     delay *= self.retry.backoff
                     continue
-                return LLMResponse(content=f"[LLM_ERROR: {e}]", retries=attempt)
+                return LLMResponse(content=_fmt_error(e), retries=attempt)
 
         return LLMResponse(
-            content=f"[LLM_ERROR: retry exhausted]",
+            content=_fmt_error("retry exhausted"),
             retries=self.retry.max_retries,
         )
 

@@ -11,11 +11,37 @@ from pathlib import Path
 from sigma.agent import BaseTool
 
 MAX_FILE_BYTES = 32 * 1024 * 1024  # 32 MB
+FORBIDDEN_PATH_PATTERNS = {"..", "~", "$"}
+
+
+def _safe_path(filepath: str, root: Path | None = None) -> Path:
+    """Resolve and validate a file path, blocking traversal escapes."""
+    if not filepath or not isinstance(filepath, str):
+        raise ValueError("filepath is required and must be a string")
+    clean = filepath.strip()
+    if not clean:
+        raise ValueError("filepath cannot be empty")
+    for pattern in FORBIDDEN_PATH_PATTERNS:
+        if pattern in clean:
+            raise ValueError(f"filepath contains forbidden pattern: {pattern}")
+    resolved = (root or Path.cwd()).resolve() / clean
+    resolved = resolved.resolve()
+    root_path = (root or Path.cwd()).resolve()
+    try:
+        resolved.relative_to(root_path)
+    except ValueError:
+        raise ValueError(f"Path traversal blocked: '{clean}' escapes root")
+    if resolved.suffix.lower() in {".exe", ".dll", ".so", ".dylib", ".bin"}:
+        raise ValueError(f"Forbidden file extension: {resolved.suffix}")
+    return resolved
 
 
 def _check_file(filepath: str) -> Path | None:
-    """Validate filepath exists and is within size limit. Returns Path or None."""
-    p = Path(filepath)
+    """Validate filepath exists, is safe, and within size limit. Returns Path or None."""
+    try:
+        p = _safe_path(filepath)
+    except ValueError:
+        return None
     if not p.exists():
         return None
     if p.stat().st_size > MAX_FILE_BYTES:

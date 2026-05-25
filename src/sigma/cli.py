@@ -32,7 +32,6 @@ def _find_dotenv() -> str | None:
         Path.cwd() / ".env",
         Path.cwd().parent / ".env",
         Path(os.environ.get("SIGMA_HOME", "")) / ".env",
-        Path("D:/RocketFactory/.env"),
     ]
     for p in candidates:
         if p.exists():

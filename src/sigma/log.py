@@ -5,9 +5,35 @@ Applications configure handlers via `setup_logging()` or standard `logging.basic
 """
 
 import logging
+import re
 import sys
 
 _logger_registry: dict[str, logging.Logger] = {}
+
+# Patterns that should never appear in log output.
+_SECRET_PATTERNS = (
+    (re.compile(r'sk-[A-Za-z0-9]{20,}'), '[REDACTED_KEY]'),
+    (re.compile(r'Bearer\s+[A-Za-z0-9\-_\.]{20,}'), 'Bearer [REDACTED]'),
+    (re.compile(r'-----BEGIN\s+(?:RSA|EC|DSA|OPENSSH)\s+PRIVATE KEY-----'), '[REDACTED_KEY]'),
+    (re.compile(r'pypi-[A-Za-z0-9_-]{20,}'), '[REDACTED_TOKEN]'),
+)
+
+
+class _SecretRedactionFilter(logging.Filter):
+    """Strip API keys, tokens, and private keys from log messages."""
+
+    def filter(self, record):
+        msg = str(record.msg)
+        for pattern, replacement in _SECRET_PATTERNS:
+            msg = pattern.sub(replacement, msg)
+        record.msg = msg
+        if record.args and isinstance(record.args, dict):
+            record.args = {
+                k: pattern.sub(replacement, str(v)) if isinstance(v, str) else v
+                for k, v in record.args.items()
+                for pattern, replacement in _SECRET_PATTERNS
+            }
+        return True
 _initialized = False
 
 
@@ -45,6 +71,7 @@ def setup_logging(
     logger = logging.getLogger("sigma")
     logger.setLevel(level)
     logger.handlers.clear()
+    logger.addFilter(_SecretRedactionFilter())
 
     handler = logging.StreamHandler(stream or sys.stdout)
     handler.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))

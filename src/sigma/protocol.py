@@ -146,6 +146,35 @@ class ToolSpec:
             },
         }
 
+    def known_params(self) -> set[str]:
+        """Return the set of parameter names the tool's _run method accepts."""
+        if self.instance and hasattr(self.instance, "_run"):
+            try:
+                sig = inspect.signature(self.instance._run)
+            except Exception:
+                return set()
+            return {
+                name for name, p in sig.parameters.items()
+                if name not in ("self", "kwargs")
+            }
+        return set(self.default_params.keys())
+
+    def validate_and_filter_args(self, args: dict) -> dict:
+        """Strip unknown keys and clamp unreasonable values from LLM-provided args."""
+        known = self.known_params()
+        if not known:
+            return args  # can't validate, pass through
+        filtered = {}
+        for k, v in args.items():
+            if k not in known:
+                continue
+            # Clamp string lengths to prevent memory bombs
+            if isinstance(v, str) and len(v) > 100_000:
+                filtered[k] = v[:100_000]
+            else:
+                filtered[k] = v
+        return filtered
+
 
 # ── Plan Output ─────────────────────────────────────────────────
 
@@ -947,6 +976,8 @@ class SigmaProtocol:
     ) -> dict:
         """使用 LLM 提供的参数执行工具（function calling 路径）."""
         tool = spec.instance
+        # Validate and sanitize LLM-generated args
+        args = spec.validate_and_filter_args(args)
         try:
             if hasattr(tool, "_run"):
                 result = tool._run(**args)
