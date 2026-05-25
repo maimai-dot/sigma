@@ -34,6 +34,12 @@ def _safe_path(filepath: str, root: Path | None = None) -> Path:
     for pattern in FORBIDDEN_PATH_PATTERNS:
         if pattern in clean:
             raise ValueError(f"filepath contains forbidden pattern: {pattern}")
+
+    p = Path(clean)
+    if p.is_absolute():
+        # Allow absolute paths — resolve() normalizes away traversal attempts
+        return p.resolve()
+
     resolved = (root or Path.cwd()).resolve() / clean
     resolved = resolved.resolve()
     root_path = (root or Path.cwd()).resolve()

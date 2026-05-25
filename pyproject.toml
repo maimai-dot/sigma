@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sigma-aerc"
-version = "0.1.1"
+version = "0.1.2"
 description = "Generic AERC multi-agent collaboration framework — zero domain knowledge baked in"
 requires-python = ">=3.12"
 readme = "README.md"

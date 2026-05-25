@@ -24,13 +24,17 @@ def _safe_path(filepath: str, root: Path | None = None) -> Path:
     for pattern in FORBIDDEN_PATH_PATTERNS:
         if pattern in clean:
             raise ValueError(f"filepath contains forbidden pattern: {pattern}")
-    resolved = (root or Path.cwd()).resolve() / clean
-    resolved = resolved.resolve()
-    root_path = (root or Path.cwd()).resolve()
-    try:
-        resolved.relative_to(root_path)
-    except ValueError:
-        raise ValueError(f"Path traversal blocked: '{clean}' escapes root")
+    p = Path(clean)
+    if p.is_absolute():
+        resolved = p.resolve()
+    else:
+        resolved = (root or Path.cwd()).resolve() / clean
+        resolved = resolved.resolve()
+        root_path = (root or Path.cwd()).resolve()
+        try:
+            resolved.relative_to(root_path)
+        except ValueError:
+            raise ValueError(f"Path traversal blocked: '{clean}' escapes root")
     if resolved.suffix.lower() in {".exe", ".dll", ".so", ".dylib", ".bin"}:
         raise ValueError(f"Forbidden file extension: {resolved.suffix}")
     return resolved
